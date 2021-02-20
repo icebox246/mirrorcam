@@ -1,6 +1,16 @@
 <script lang="ts">
   let videoDisplay: HTMLVideoElement;
+  let videoStyle: string;
+  let flipX: boolean = localStorage.getItem('flipX') === 'true';
+  let flipY: boolean = localStorage.getItem('flipY') === 'true';
   let currentScale: number = 1;
+
+  $: videoStyle = `
+    transform: 
+    ${flipX ? 'scale(-1,1)' : ''}
+    ${flipY ? 'scale(1,-1)' : ''}
+    scale(${currentScale})
+  `;
 
   if (navigator.mediaDevices.getUserMedia) {
     navigator.mediaDevices
@@ -21,15 +31,29 @@
   function scroll(event) {
     currentScale -= event.deltaY * 0.05;
     currentScale = Math.max(1, currentScale);
-    videoDisplay.style.transform = `scale(-1,1) scale(${currentScale})`;
+  }
+
+  function keydown(event: KeyboardEvent) {
+    if (event.key === 'v') flipY = !flipY;
+    if (event.key === 'h') flipX = !flipX;
+
+    localStorage.setItem('flipX', flipX.toString());
+    localStorage.setItem('flipY', flipY.toString());
   }
 </script>
 
 <svelte:head><title>Simple camera preview</title></svelte:head>
 
-<main on:wheel={scroll}>
+<main on:wheel={scroll} on:keydown={keydown}>
   <!-- svelte-ignore a11y-media-has-caption -->
-  <video bind:this={videoDisplay} src="" />
+  <video style={videoStyle} bind:this={videoDisplay} src="" />
+  <div class="info">
+    <p>Controls:</p>
+    <ul>
+      <li>h - flip horizontally</li>
+      <li>v - flip vertically</li>
+    </ul>
+  </div>
 </main>
 
 <style>
@@ -42,13 +66,20 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    max-height: calc(100vh - 10px);
+    max-height: calc(100vh - 15px);
     overflow: hidden;
   }
 
   video {
     display: block;
-    transform: scale(-1, 1);
     max-height: 100%;
+  }
+
+  .info {
+    position: absolute;
+    left: 30px;
+    bottom: 20px;
+    text-shadow: black 1px 1px 1px;
+    font-weight: bold;
   }
 </style>
